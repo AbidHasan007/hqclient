@@ -266,6 +266,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
     // NO cleanup function - we want the socket to persist across route changes
     // Socket will only be cleaned up when user logs out or app closes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.cognitoInfo?.userId]); // Only depend on userId, NOT connectSocket
   
   // Final cleanup only when provider unmounts (app closes)

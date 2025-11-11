@@ -109,6 +109,52 @@ export default function TenantVerificationForm() {
     return () => clearInterval(intervalId);
   }, []);
 
+  // All callback functions must be defined BEFORE any conditional returns
+  const getAuthSession = React.useCallback(async () => {
+    try {
+      if (cachedSession) {
+        console.log(`Using cached session (fetch count: ${sessionFetchCount})`);
+        return cachedSession;
+      }
+      
+      setSessionFetchCount(prev => prev + 1);
+      console.log(`Fetching new session (fetch count: ${sessionFetchCount + 1})`);
+      
+      const session = await fetchAuthSession();
+      setCachedSession(session);
+      return session;
+    } catch (error) {
+      console.error('Session fetch error:', error);
+      throw error;
+    }
+  }, [cachedSession, sessionFetchCount]);
+
+  // useMemo must also be before conditional returns
+  const isVerificationInProgress = React.useMemo(() => {
+    if (!verificationStatus) return false;
+    
+    const status = (
+      verificationStatus.status || 
+      verificationStatus.verificationStatus || 
+      verificationStatus.nidStatus || 
+      'NOT_SUBMITTED'
+    ).toString().toUpperCase();
+    
+    console.log('Verification status check:', {
+      raw: verificationStatus,
+      normalized: status,
+      fields: {
+        status: verificationStatus.status,
+        verificationStatus: verificationStatus.verificationStatus,
+        nidStatus: verificationStatus.nidStatus
+      },
+      isPending: ['PENDING', 'PENDING_REVIEW'].includes(status),
+      isVerified: status === 'VERIFIED'
+    });
+    
+    return ['PENDING', 'PENDING_REVIEW', 'VERIFIED'].includes(status);
+  }, [verificationStatus]);
+
   if (userLoading) {
     return (
       <Card>
@@ -167,25 +213,6 @@ export default function TenantVerificationForm() {
       setIsProcessingOcr(false);
     }
   };
-
-  const getAuthSession = React.useCallback(async () => {
-    try {
-      if (cachedSession) {
-        console.log(`Using cached session (fetch count: ${sessionFetchCount})`);
-        return cachedSession;
-      }
-      
-      setSessionFetchCount(prev => prev + 1);
-      console.log(`Fetching new session (fetch count: ${sessionFetchCount + 1})`);
-      
-      const session = await fetchAuthSession();
-      setCachedSession(session);
-      return session;
-    } catch (error) {
-      console.error('Session fetch error:', error);
-      throw error;
-    }
-  }, [cachedSession, sessionFetchCount]);
 
   const handleUpload = async () => {
     if (!nidFront || !nidBack || !selfie) {
@@ -377,34 +404,6 @@ export default function TenantVerificationForm() {
       });
     }
   };
-
-  // Check if verification is in a state that should disable the form
-  const isVerificationInProgress = React.useMemo(() => {
-    if (!verificationStatus) return false;
-    
-    // Normalize the status by checking all possible fields
-    const status = (
-      verificationStatus.status || 
-      verificationStatus.verificationStatus || 
-      verificationStatus.nidStatus || 
-      'NOT_SUBMITTED'
-    ).toString().toUpperCase();
-    
-    // Log the status check
-    console.log('Verification status check:', {
-      raw: verificationStatus,
-      normalized: status,
-      fields: {
-        status: verificationStatus.status,
-        verificationStatus: verificationStatus.verificationStatus,
-        nidStatus: verificationStatus.nidStatus
-      },
-      isPending: ['PENDING', 'PENDING_REVIEW'].includes(status),
-      isVerified: status === 'VERIFIED'
-    });
-    
-    return ['PENDING', 'PENDING_REVIEW', 'VERIFIED'].includes(status);
-  }, [verificationStatus]);
 
   return (
     <Card>
