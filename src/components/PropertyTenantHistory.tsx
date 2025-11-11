@@ -62,7 +62,7 @@ const PropertyTenantHistory: React.FC<PropertyTenantHistoryProps> = ({ propertyI
         <div className="text-center py-8 text-slate-500">
           <Users size={48} className="mx-auto mb-4 opacity-30" />
           <p className="text-lg font-medium">No Previous Tenants</p>
-          <p className="text-sm mt-2">This property hasn't had any tenants yet.</p>
+          <p className="text-sm mt-2">This property hasn&apos;t had any tenants yet.</p>
         </div>
       </div>
     );
@@ -277,7 +277,7 @@ const PropertyTenantHistory: React.FC<PropertyTenantHistoryProps> = ({ propertyI
                           </span>
                         </div>
                         {review.comment && (
-                          <p className="text-sm text-slate-600 italic">"{review.comment}"</p>
+                          <p className="text-sm text-slate-600 italic">&quot;{review.comment}&quot;</p>
                         )}
                       </div>
                     ))}

@@ -20,6 +20,26 @@ export default function TenantVerificationForm() {
   // Session management state
   const [cachedSession, setCachedSession] = React.useState<any>(null);
   const [sessionFetchCount, setSessionFetchCount] = React.useState(0);
+  
+  // Form state - must be declared before any conditional returns
+  const [nidFront, setNidFront] = useState<File | null>(null);
+  const [nidBack, setNidBack] = useState<File | null>(null);
+  const [selfie, setSelfie] = useState<File | null>(null);
+  const [isProcessingOcr, setIsProcessingOcr] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrData, setOcrData] = useState<{
+    name?: string;
+    nidNumber?: string;
+    address?: string;
+    steps?: Array<any>;
+    summary?: any;
+  }>({});
+  const [showPreview, setShowPreview] = useState(false);
+  const [confirmedName, setConfirmedName] = useState<string | undefined>(undefined);
+  const [confirmedNid, setConfirmedNid] = useState<string | undefined>(undefined);
+  const [confirmedAddress, setConfirmedAddress] = useState<string | undefined>(undefined);
+  const [isConfirmedByUser, setIsConfirmedByUser] = useState(false);
+  
   const cognitoId = authUser?.cognitoInfo?.userId;
   const { data: verificationStatus, refetch: refetchVerification } = useGetTenantVerificationStatusQuery(
     cognitoId || '', 
@@ -30,6 +50,32 @@ export default function TenantVerificationForm() {
     }
   );
   const [withdrawVerification, { isLoading: isWithdrawing }] = useWithdrawVerificationMutation();
+
+  // All hooks must be before any conditional returns
+  const onNidFrontDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles[0]) {
+      setNidFront(acceptedFiles[0]);
+      setOcrError(null);
+    }
+  }, []);
+
+  const onNidBackDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles[0]) {
+      setNidBack(acceptedFiles[0]);
+      setOcrError(null);
+    }
+  }, []);
+
+  const onSelfieDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles[0]) {
+      setSelfie(acceptedFiles[0]);
+      setOcrError(null);
+    }
+  }, []);
+
+  const nidFrontDropzone = useDropzone({ onDrop: onNidFrontDrop, accept: { 'image/*': ['.png', '.jpg', '.jpeg'] }, maxFiles: 1 });
+  const nidBackDropzone = useDropzone({ onDrop: onNidBackDrop, accept: { 'image/*': ['.png', '.jpg', '.jpeg'] }, maxFiles: 1 });
+  const selfieDropzone = useDropzone({ onDrop: onSelfieDrop, accept: { 'image/*': ['.png', '.jpg', '.jpeg'] }, maxFiles: 1 });
 
   // Debug logging with more detailed status information
   React.useEffect(() => {
@@ -63,25 +109,6 @@ export default function TenantVerificationForm() {
     return () => clearInterval(intervalId);
   }, []);
 
-  const [nidFront, setNidFront] = useState<File | null>(null);
-  const [nidBack, setNidBack] = useState<File | null>(null);
-  const [selfie, setSelfie] = useState<File | null>(null);
-
-  const [isProcessingOcr, setIsProcessingOcr] = useState(false);
-  const [ocrError, setOcrError] = useState<string | null>(null);
-  const [ocrData, setOcrData] = useState<{
-    name?: string;
-    nidNumber?: string;
-    address?: string;
-    steps?: Array<any>;
-    summary?: any;
-  }>({});
-  const [showPreview, setShowPreview] = useState(false);
-  const [confirmedName, setConfirmedName] = useState<string | undefined>(undefined);
-  const [confirmedNid, setConfirmedNid] = useState<string | undefined>(undefined);
-  const [confirmedAddress, setConfirmedAddress] = useState<string | undefined>(undefined);
-  const [isConfirmedByUser, setIsConfirmedByUser] = useState(false);
-
   if (userLoading) {
     return (
       <Card>
@@ -104,30 +131,6 @@ export default function TenantVerificationForm() {
       </Card>
     );
   }
-  const onNidFrontDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles[0]) {
-      setNidFront(acceptedFiles[0]);
-      setOcrError(null);
-    }
-  }, []);
-
-  const onNidBackDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles[0]) {
-      setNidBack(acceptedFiles[0]);
-      setOcrError(null);
-    }
-  }, []);
-
-  const onSelfieDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles[0]) {
-      setSelfie(acceptedFiles[0]);
-      setOcrError(null);
-    }
-  }, []);
-
-  const nidFrontDropzone = useDropzone({ onDrop: onNidFrontDrop, accept: { 'image/*': ['.png', '.jpg', '.jpeg'] }, maxFiles: 1 });
-  const nidBackDropzone = useDropzone({ onDrop: onNidBackDrop, accept: { 'image/*': ['.png', '.jpg', '.jpeg'] }, maxFiles: 1 });
-  const selfieDropzone = useDropzone({ onDrop: onSelfieDrop, accept: { 'image/*': ['.png', '.jpg', '.jpeg'] }, maxFiles: 1 });
 
   const handlePreview = async () => {
     setOcrError(null);
@@ -274,7 +277,7 @@ export default function TenantVerificationForm() {
 
       // Log FormData contents
       console.log('FormData entries:');
-      for (let pair of formData.entries()) {
+      for (const pair of formData.entries()) {
         console.log(pair[0], pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]);
       }
       // Re-fetch latest status from server right before upload to avoid stale state/race
