@@ -1,4 +1,4 @@
-# 🏡 HomeQuest - Frontend
+# 🏡 HomeQuest - Frontend  
 
 Modern property rental platform built with Next.js 14, React, and TypeScript.
 
