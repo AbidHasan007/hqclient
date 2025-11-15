@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useCreateTerminationRequestMutation } from "@/state/api";
+import { useCreateTerminationRequestMutation, useRemoveRoommateMutation, useGetAuthUserQuery } from "@/state/api";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
@@ -48,8 +48,13 @@ interface ResidenceCardProps {
       tenants?: Array<{
         id: number;
         role: 'PRIMARY' | 'ROOMMATE';
+        rentShare?: number | null;
         tenant: {
+          cognitoId: string;
           name: string;
+          email?: string;
+          trustScore?: number;
+          nidStatus?: string;
         };
       }>;
     } | null;
@@ -66,9 +71,53 @@ const ResidenceCard: React.FC<ResidenceCardProps> = ({ residence }) => {
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [removeRoommateModalOpen, setRemoveRoommateModalOpen] = useState(false);
+  const [selectedRoommate, setSelectedRoommate] = useState<{ cognitoId: string; name: string } | null>(null);
   const router = useRouter();
   
   const [createTerminationRequest] = useCreateTerminationRequestMutation();
+  const [removeRoommate, { isLoading: isRemovingRoommate }] = useRemoveRoommateMutation();
+  const { data: authUser } = useGetAuthUserQuery();
+
+  // Get current user's tenant entry
+  const currentUserTenant = residence.lease?.tenants?.find(
+    (t) => t.tenant.cognitoId === authUser?.cognitoInfo?.userId
+  );
+
+  const isPrimaryTenant = currentUserTenant?.role === 'PRIMARY';
+  
+  // Get the user's individual rent share
+  const getUserRentShare = () => {
+    if (!residence.lease) return 0;
+    
+    // If user has a specific rent share, use it
+    if (currentUserTenant?.rentShare) {
+      return currentUserTenant.rentShare;
+    }
+    
+    // Otherwise, split equally among all tenants
+    const tenantCount = residence.lease.tenants?.length || 1;
+    return residence.lease.rent / tenantCount;
+  };
+  
+  const handleRemoveRoommate = async () => {
+    if (!selectedRoommate) return;
+    
+    try {
+      await removeRoommate({ 
+        roommateCognitoId: selectedRoommate.cognitoId 
+      }).unwrap();
+      
+      setRemoveRoommateModalOpen(false);
+      setSelectedRoommate(null);
+      
+      // Optionally show success message
+      alert(`${selectedRoommate.name} has been removed from the lease.`);
+    } catch (error) {
+      console.error("Failed to remove roommate:", error);
+      alert("Failed to remove roommate. Please try again.");
+    }
+  };
   
   // For indefinite leases, we don't have lease ending warnings
   const isLeaseEnding = () => {
@@ -213,9 +262,9 @@ const ResidenceCard: React.FC<ResidenceCardProps> = ({ residence }) => {
                 <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                   <BanknoteArrowDown className="h-4 w-4 text-teal-600" />
                   <div>
-                    <p className="text-xs text-gray-500">Monthly Rent</p>
+                    <p className="text-xs text-gray-500">Your Monthly Share</p>
                     <p className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(residence.lease.rent)}
+                      {formatCurrency(getUserRentShare())}
                     </p>
                   </div>
                 </div>
@@ -252,31 +301,55 @@ const ResidenceCard: React.FC<ResidenceCardProps> = ({ residence }) => {
                       </span>
                     </div>
                     <div className="space-y-1.5">
-                      {residence.lease.tenants.map((leaseTenant) => (
-                        <div 
-                          key={leaseTenant.id}
-                          className="flex items-center justify-between p-2 bg-gradient-to-r from-gray-50 to-white rounded-md border border-gray-100"
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-sm">
-                              {leaseTenant.tenant.name.charAt(0).toUpperCase()}
-                            </div>
-                            <span className="text-sm font-medium text-gray-900">
-                              {leaseTenant.tenant.name}
-                            </span>
-                          </div>
-                          <Badge 
-                            variant={leaseTenant.role === 'PRIMARY' ? 'default' : 'secondary'}
-                            className={`text-xs px-2 py-0.5 ${
-                              leaseTenant.role === 'PRIMARY' 
-                                ? 'bg-teal-600 text-white hover:bg-teal-700' 
-                                : 'bg-blue-600 text-white hover:bg-blue-700'
-                            }`}
+                      {residence.lease.tenants.map((leaseTenant) => {
+                        const isCurrentUser = leaseTenant.tenant.cognitoId === authUser?.cognitoInfo?.userId;
+                        const canRemove = isPrimaryTenant && !isCurrentUser && leaseTenant.role === 'ROOMMATE';
+                        
+                        return (
+                          <div 
+                            key={leaseTenant.id}
+                            className="flex items-center justify-between p-2 bg-gradient-to-r from-gray-50 to-white rounded-md border border-gray-100"
                           >
-                            {leaseTenant.role}
-                          </Badge>
-                        </div>
-                      ))}
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-sm">
+                                {leaseTenant.tenant.name.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="text-sm font-medium text-gray-900">
+                                {leaseTenant.tenant.name}
+                                {isCurrentUser && <span className="text-xs text-gray-500 ml-1">(You)</span>}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge 
+                                variant={leaseTenant.role === 'PRIMARY' ? 'default' : 'secondary'}
+                                className={`text-xs px-2 py-0.5 ${
+                                  leaseTenant.role === 'PRIMARY' 
+                                    ? 'bg-teal-600 text-white hover:bg-teal-700' 
+                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                                }`}
+                              >
+                                {leaseTenant.role}
+                              </Badge>
+                              {canRemove && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => {
+                                    setSelectedRoommate({
+                                      cognitoId: leaseTenant.tenant.cognitoId,
+                                      name: leaseTenant.tenant.name
+                                    });
+                                    setRemoveRoommateModalOpen(true);
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -385,6 +458,66 @@ const ResidenceCard: React.FC<ResidenceCardProps> = ({ residence }) => {
                 </>
               ) : (
                 "Submit Request"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Roommate Confirmation Modal */}
+      <Dialog open={removeRoommateModalOpen} onOpenChange={setRemoveRoommateModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Remove Roommate
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Are you sure you want to remove {selectedRoommate?.name} from this lease?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-red-800 mb-2">Important</h4>
+                  <ul className="text-sm space-y-1 text-red-700 list-disc pl-4">
+                    <li>This action cannot be undone</li>
+                    <li>Rent will be redistributed among remaining tenants</li>
+                    <li>The roommate will lose access to this residence</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setRemoveRoommateModalOpen(false);
+                setSelectedRoommate(null);
+              }}
+              disabled={isRemovingRoommate}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleRemoveRoommate} 
+              disabled={isRemovingRoommate}
+              className="flex-1 bg-red-600 hover:bg-red-700"
+            >
+              {isRemovingRoommate ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  Removing...
+                </>
+              ) : (
+                "Remove Roommate"
               )}
             </Button>
           </DialogFooter>
