@@ -674,7 +674,7 @@ const NewProperty = () => {
                                 name="address" 
                                 label="সম্পূর্ণ ঠিকানা"
                                 placeholder="বাড়ি নং, রাস্তার নাম, এলাকা"
-                                disabled
+                              
                               />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
