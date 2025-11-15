@@ -79,6 +79,17 @@ const ResidenceCard: React.FC<ResidenceCardProps> = ({ residence }) => {
   const [removeRoommate, { isLoading: isRemovingRoommate }] = useRemoveRoommateMutation();
   const { data: authUser } = useGetAuthUserQuery();
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('ResidenceCard Data:', {
+      hasLease: !!residence.lease,
+      rent: residence.lease?.rent,
+      tenants: residence.lease?.tenants,
+      tenantCount: residence.lease?.tenants?.length,
+      authUserId: authUser?.cognitoInfo?.userId
+    });
+  }, [residence, authUser]);
+
   // Get current user's tenant entry
   const currentUserTenant = residence.lease?.tenants?.find(
     (t) => t.tenant.cognitoId === authUser?.cognitoInfo?.userId
