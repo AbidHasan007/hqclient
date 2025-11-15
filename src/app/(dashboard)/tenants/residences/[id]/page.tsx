@@ -219,8 +219,8 @@ const ResidenceDetailPage = () => {
     );
   }
 
-  const propertyImages = property.images && property.images.length > 0 
-    ? property.images 
+  const propertyImages = property.photoUrls && property.photoUrls.length > 0 
+    ? property.photoUrls 
     : ["/placeholder.jpg", "/singlelisting-2.jpg", "/singlelisting-3.jpg"];
 
   return (

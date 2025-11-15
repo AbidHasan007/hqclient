@@ -1274,7 +1274,7 @@ getReviews: build.query<any[], { propertyId?: number; type?: string; userId?: st
         method: "PUT",
         body: { response },
       }),
-      invalidatesTags: ["RoommateRequests"],
+      invalidatesTags: ["RoommateRequests", "Leases", "Properties"],
       async onQueryStarted(_, { queryFulfilled }) {
         try {
           await withToast(queryFulfilled, {
@@ -1383,7 +1383,7 @@ getReviews: build.query<any[], { propertyId?: number; type?: string; userId?: st
         url: `roommates/roommate/${roommateCognitoId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Tenants", "Leases", "RoommateRequests"],
+      invalidatesTags: ["Tenants", "Leases", "RoommateRequests", "Properties"],
       async onQueryStarted(_, { queryFulfilled }) {
         try {
           await withToast(queryFulfilled, {
