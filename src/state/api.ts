@@ -36,6 +36,12 @@ export const api = createApi({
   reducerPath: "api",
   tagTypes: ["Landlords", "Tenants", "Admins","Properties","PropertyDetails","Leases","Payments","Applications","SafetyIndicators","Verification","Users","Posts","Comments","RoommateMatches","RoommateRequests","RoommatePreference"],
   // Consider adding "Reviews" tag in future for targeted invalidation
+  // Performance optimization: Keep data cached for 5 minutes
+  keepUnusedDataFor: 300, // 5 minutes in seconds
+  // Reduce unnecessary refetches on mount
+  refetchOnMountOrArgChange: 60, // Only refetch if data is older than 60 seconds
+  refetchOnFocus: false, // Don't refetch when window regains focus
+  refetchOnReconnect: true, // Refetch when internet reconnects
   endpoints: (build) => ({
     
       // reviews
