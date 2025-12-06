@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Amplify } from 'aws-amplify';
-import { Authenticator, Radio, RadioGroupField, useAuthenticator, View } from '@aws-amplify/ui-react';
+import { Authenticator, Radio, RadioGroupField, useAuthenticator, View, translations } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { useRouter, usePathname } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import AuthErrorGuide from '@/components/AuthErrorGuide';
+import { I18n } from 'aws-amplify/utils';
+
+I18n.putVocabularies(translations);
+I18n.putVocabularies({
+  en: {
+    'Sign In': 'Log In',
+    'Sign in': 'Log in',
+  },
+});
 
 // Check if environment variables are set
 const userPoolId = process.env.NEXT_PUBLIC_AWS_COGNITO_USER_POOL_ID;
