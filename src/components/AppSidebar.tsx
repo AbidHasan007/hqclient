@@ -36,7 +36,7 @@ const AppSidebar = React.memo(({userType}: AppSidebarProps) => {
             return [ 
                 {icon: LayoutDashboard, label: "Dashboard", href: "/landlords/dashboard" },
                 {icon: Building, label: "Properties", href: "/landlords/properties" },
-                {icon: FileText, label: "Applications", href: "/landlords/applications" },
+                {icon: FileText, label: "Rent Requests", href: "/landlords/applications" },
                 {icon: AlertTriangle, label: "Termination Requests", href: "/landlords/termination-requests" },
                 {icon: BadgeAlert, label: "Verify", href: "/landlords/verify" },
                 {icon: User, label: "Profile", href: "/landlords/profile" },
@@ -46,7 +46,7 @@ const AppSidebar = React.memo(({userType}: AppSidebarProps) => {
             return [ 
                 {icon: LayoutDashboard, label: "Dashboard", href: "/tenants/dashboard" },
                 {icon: Heart, label: "Favorites", href: "/tenants/favorites" },
-                {icon: FileText, label: "Applications", href: "/tenants/applications" },
+                {icon: FileText, label: "Requested Rent", href: "/tenants/applications" },
                 {icon: Home, label: "Residences", href: "/tenants/residences" },
                 {icon: MessageSquare, label: "Community", href: "/community" },
                 {icon: Users, label: "Roommates", href: "/roommates" },

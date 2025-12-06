@@ -141,7 +141,7 @@ const Navbar = () => {
               <Button
               variant="outline"
               className="text-base font-bold text-teal-500 bg-transparent border-teal-500 hover:bg-teal-500 hover:text-white"
-              >Sign in</Button>
+              >Log in</Button>
              </Link>
               <Link href="/signup">
               <Button

@@ -34,7 +34,7 @@ const ContactWidget = ({ onOpenModal }: ContactWidgetProps) => {
         className="w-full bg-teal-700 text-white hover:bg-teal-600"
         onClick={handleButtonClick}
       >
-        {authUser ? "Submit Application" : "Sign In to Rent"}
+        {authUser ? "Send Rent Request" : "Log In to Rent"}
       </Button>
 
       <hr className="my-4" />
